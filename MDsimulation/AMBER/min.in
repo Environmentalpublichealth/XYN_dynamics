@@ -1,0 +1,6 @@
+Minimization: 5000 steps
+ &cntrl
+  imin=1, maxcyc=5000, ncyc=2500,
+  cut=8.0, ntb=1, ntc=1, ntf=1,
+  ntpr=100,
+ /

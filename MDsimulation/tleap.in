@@ -1,0 +1,19 @@
+# tleap.in
+# 1. Load the standard force fields
+source leaprc.protein.ff14SB
+source leaprc.water.tip3p
+
+# 3. Load your AF3 PDB directly
+mol = loadpdb wt_apo_ready.pdb
+
+# 4. If you have disulfide bonds, you must define them manually here.
+# Example: bond mol.25.SG mol.80.SG (Check your residue numbers)
+
+# 5. Create the solvent box and neutralize
+solvateOct mol TIP3PBOX 10.0
+addIons mol Na+ 0
+addIons mol Cl- 0
+
+# 6. Save files
+saveamberparm mol system.prmtop system.inpcrd
+quit

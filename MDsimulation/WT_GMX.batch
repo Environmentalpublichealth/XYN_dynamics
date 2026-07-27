@@ -1,0 +1,39 @@
+#!/bin/bash
+#SBATCH --job-name=WT_start
+#SBATCH --partition=general
+#SBATCH --nodes=1
+#SBATCH --ntasks=64
+#SBATCH --cpus-per-task=1
+#SBATCH --time=16:00:00
+#SBATCH --output=gmx_WT.log
+
+module load gromacs/2022.5_plumed_gcc_9.5.0_openmpi_4.1.5
+
+# Add this line to suppress the OpenMPI CUDA warning on CPU nodes
+export OMPI_MCA_opal_warn_on_missing_libcuda=0
+
+# 2. Fix the UCX / Connection Refused Crash
+# This forces OpenMPI to use internal shared memory instead of InfiniBand
+export OMPI_MCA_pml=ob1
+export OMPI_MCA_btl=^openib
+
+# --- STEP 1: MINIMIZATION ---
+gmx_mpi grompp -f min.mdp -c system.gro -p system.top -o min.tpr -maxwarn 1
+mpirun gmx_mpi mdrun -v -deffnm min -ntomp 1
+
+# --- STEP 2: NVT (HEATING) ---
+# Starts at 300K, keeps volume constant, restrains protein
+gmx_mpi grompp -f nvt.mdp -c min.gro -r min.gro -p system.top -o nvt.tpr -maxwarn 1
+mpirun gmx_mpi mdrun -v -deffnm nvt -ntomp 1
+
+# --- STEP 3: NPT (EQUILIBRATION) ---
+# Turns on pressure coupling to let water density settle
+gmx_mpi grompp -f equi.mdp -c nvt.gro -r nvt.gro -t nvt.cpt -p system.top -o equi.tpr -maxwarn 1
+mpirun gmx_mpi mdrun -v -deffnm equi -ntomp 1
+
+# --- STEP 4: PRODUCTION ---
+# Removes restraints, collects data for your GAT model
+gmx_mpi grompp -f prod.mdp -c equi.gro -t equi.cpt -p system.top -o prod_1.tpr -maxwarn 1
+mpirun gmx_mpi mdrun -v -deffnm prod_1 -maxh 15.5 -ntomp 1
+
+

@@ -1,0 +1,63 @@
+#!/bin/bash
+#SBATCH --job-name=E7_500ns      # Job name
+#SBATCH --partition=gpu           # Use the GPU partition
+#SBATCH --gres=gpu:A100:1
+#SBATCH --nodes=1                 # Run on a single node
+#SBATCH --ntasks=1                # One task
+#SBATCH --cpus-per-task=4         # CPUs for overhead/IO
+#SBATCH --mem=16G                 # Memory
+#SBATCH --time=48:00:00           # 48-hour limit
+#SBATCH --output=md_E7.log        # Standard output and error log
+
+# 1. Load the working Amber version
+module load amber/22
+
+# 2. System Preparation (pdb4amber + tleap)
+# We assume your input is 'af3_input.pdb'
+#pdb4amber -i af3_input.pdb -o xyn_ready.pdb --reduce --dry
+
+# Build the topology
+# Note: Ensure your tleap.in loads 'xyn_ready.pdb'
+#tleap -f tleap.in > tleap.log
+
+# Check if topology was created; if not, exit
+if [ ! -f system.prmtop ]; then
+    echo "tleap failed. Check tleap.log."
+    exit 1
+fi
+
+# 3. Minimization (Relaxes the AF3 structure)
+pmemd.cuda -O -i min.in -o min.out -p system.prmtop -c system.inpcrd -r min.rst7
+
+# 4. Heating (0 to 300K)
+pmemd.cuda -O -i heat.in -o heat.out -p system.prmtop -c min.rst7 -r heat.rst7
+
+# 5. Short Equilibration (Density/Pressure adjustment)
+# Often used to ensure the water box reaches the correct density
+pmemd.cuda -O -i equi.in -o equi.out -p system.prmtop -c heat.rst7 -r equi.rst7
+
+# 6. Production Loop (500 ns total)
+# We run 10 blocks of 50 ns each. 
+# Total: 10 * 25,000,000 steps (at 2fs) = 500 ns.
+
+PREV_RST="equi.rst7"
+
+for i in {1..10}
+do
+    echo "Starting Production Block $i at $(date)"
+    
+    pmemd.cuda -O -i prod.in \
+               -p system.prmtop \
+               -c $PREV_RST \
+               -r prod_$i.rst7 \
+               -o prod_$i.out \
+               -x prod_$i.nc
+    
+    # Update the pointer for the next block
+    PREV_RST="prod_$i.rst7"
+    
+    echo "Finished Production Block $i at $(date)"
+done
+
+echo "500 ns Simulation Complete."
+

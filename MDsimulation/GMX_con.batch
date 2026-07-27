@@ -1,0 +1,39 @@
+#!/bin/bash
+#SBATCH --job-name=WT_con
+#SBATCH --partition=general
+#SBATCH --nodes=1
+#SBATCH --ntasks=64
+#SBATCH --cpus-per-task=1
+#SBATCH --time=24:00:00
+#SBATCH --output=WT_con2.log
+
+module load gromacs/2022.5_plumed_gcc_9.5.0_openmpi_4.1.5
+
+# Add this line to suppress the OpenMPI CUDA warning on CPU nodes
+export OMPI_MCA_opal_warn_on_missing_libcuda=0
+
+# This forces OpenMPI to use internal shared memory instead of InfiniBand
+export OMPI_MCA_pml=ob1
+export OMPI_MCA_btl=^openib
+
+# ONLY RUN PRODUCTION: Pick up from the exact picosecond it left off
+mpirun gmx_mpi mdrun -v -deffnm prod_1 -cpi prod_1.cpt -append -maxh 47.5 -ntomp 1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

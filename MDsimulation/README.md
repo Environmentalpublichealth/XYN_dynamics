@@ -30,7 +30,9 @@ Two system files are needed for the MD simulation run.
 ## Amber to Gromacs
 AmberTools needs GPU, to avoild the long queue for a GPU node, I converted amber outputs to use by GROMACS, a conventional MD tool on CPU. But I would still put amber scripts in here in case you can access a GPU. It should be 5x faster than GROMACS. 
 ### Amber run
-Please find script and input files [here]()
+Please find script and input files [here](https://github.com/Environmentalpublichealth/XYN_dynamics/tree/main/MDsimulation/AMBER).    
+The bash script is `E7_amber.batch`. 
+
 ### GROMACS run
 1. Convert Amber files into GROMACS inputs
 ```bash
@@ -55,4 +57,19 @@ Note!! AmberTools needs to be loaded in the environment. I've try other ways to 
 - nvt.mdp (heat step)
 - prod.mdp (simulation step)
 
-All input files can be found in [here]()
+All input files can be found in [here](https://github.com/Environmentalpublichealth/XYN_dynamics/tree/main/MDsimulation/GROMACS).     
+The bash scripts are `WT_GMX.batch` and `GMX_con.batch`.
+
+The MD simulations on CPU runs slow, at about 30 - 50 ns per day. If we need to run a 200 ns simulation, it will span 4 to 7 days. My script has a initial GMX start file and a continue file to pick up the leftover ns every 48 hours because the max time I can submit a batch job is 2 days. If no CPU time use limit, no need to do the continue script. 
+
+## Post-analysis
+After the simulation finished, output files generated:
+```txt
+- prod_1.cpt
+- prod_1.edr
+- prod_1.gro
+- prod_1.tpr
+- prod_1.xtc
+- prod_1.log
+```
+Script to generate RMSF and RMSD for visualization. `run_analysis.sh`

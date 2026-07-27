@@ -25,7 +25,7 @@ echo "1 0" | gmx_mpi trjconv -s prod_1.tpr -f prod_1.xtc -o prod_center.xtc -pbc
 echo "4 0" | gmx_mpi trjconv -s prod_1.tpr -f prod_center.xtc -o prod_final.xtc -fit rot+trans
 
 # C. Calculate RMSD for the backbone (4 = Backbone for fit, 4 = Backbone for calc)
-echo "4 4" | gmx_mpi rmsd -s prod_1.tpr -f prod_final.xtc -o rmsd_WT.xvg -tu ns
+echo "4 4" | gmx_mpi rms -s prod_1.tpr -f prod_final.xtc -o rmsd_WT.xvg -tu ns
 
 # D. Calculate per-residue RMSF for the backbone (4 = Backbone)
 echo "4" | gmx_mpi rmsf -s prod_1.tpr -f prod_final.xtc -o rmsf_WT.xvg -res

@@ -5,7 +5,7 @@ I followed the process described in [NRI-MD paper](https://static-content.spring
 Remove H2O and add hydrogens
 ```bash
 module load amber/22
-reduce -BUILD < af3_model.pdb > wt_apo_ready.pdb 2> reduce_info.log
+reduce -BUILD input.pdb > wt_ready.pdb 2> reduce_info.log
 ```
 This outputs the PDB file for Amber to process
 
